@@ -1,5 +1,5 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-# from django.contrib.auth import get_user_model
 
 
 class CustomLoginResponseSerializer(serializers.Serializer):
@@ -14,3 +14,19 @@ class CustomLoginResponseSerializer(serializers.Serializer):
     def to_representation(self, instance):
         response_data = super().to_representation(instance)
         return {"code": 1, "data": response_data, "msg": "Login successful"}
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = [
+            "id",
+            "username",
+            "name",
+            "phone",
+            "sex",
+            "id_number",
+            "status",
+            "create_user",
+            "update_user",
+        ]

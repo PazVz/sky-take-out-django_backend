@@ -9,15 +9,16 @@ class Employee(AbstractUser):
     phone = models.CharField(
         max_length=11, verbose_name="Phone Number", null=True, blank=True
     )
-    sex = models.IntegerField(
-        choices=((1, "male"), (0, "female")), null=True, blank=True
+    sex = models.CharField(
+        max_length=1, choices=(("M", "male"), ("F", "female")), null=True, blank=True
     )
     id_number = models.CharField(
         max_length=18, verbose_name="ID Number", null=True, blank=True
     )
-    status = models.IntegerField(
-        choices=[(1, "normal"), (0, "locked")],
-        default=1,
+    status = models.CharField(
+        max_length=1,
+        choices=[("N", "normal"), ("L", "locked")],
+        default="N",
         verbose_name="Account Status",
         null=True,
         blank=True,
