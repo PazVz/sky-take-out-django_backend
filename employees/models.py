@@ -15,17 +15,16 @@ class Employee(AbstractUser):
     id_number = models.CharField(
         max_length=18, verbose_name="ID Number", null=True, blank=True
     )
-    status = models.CharField(
-        max_length=1,
-        choices=[("N", "normal"), ("L", "locked")],
-        default="N",
+    status = models.IntegerField(
+        choices=[(1, "normal"), (0, "locked")],
+        default=1,
         verbose_name="Account Status",
         null=True,
         blank=True,
     )
-    create_time = models.DateTimeField(auto_now_add=True, verbose_name="Create Time")
-    update_time = models.DateTimeField(auto_now=True, verbose_name="Last Update Time")
-    create_user = models.ForeignKey(
+    createTime = models.DateTimeField(auto_now_add=True, verbose_name="Create Time")
+    updateTime = models.DateTimeField(auto_now=True, verbose_name="Last Update Time")
+    createUser = models.ForeignKey(
         "self",
         null=True,
         blank=True,
@@ -33,7 +32,7 @@ class Employee(AbstractUser):
         related_name="created_employees",
         verbose_name="Creator",
     )
-    update_user = models.ForeignKey(
+    updateUser = models.ForeignKey(
         "self",
         null=True,
         blank=True,

@@ -20,10 +20,10 @@ class EmployeeAdmin(UserAdmin):
         "id_number",
         "status",
         "is_staff",
-        "create_time",
-        "update_time",
-        "create_user",
-        "update_user",
+        "createTime",
+        "updateTime",
+        "createUser",
+        "updateUser",
     ]
     fieldsets = UserAdmin.fieldsets + (
         (

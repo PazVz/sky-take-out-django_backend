@@ -22,11 +22,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "username",
+            "password",
             "name",
             "phone",
             "sex",
             "id_number",
             "status",
-            "create_user",
-            "update_user",
+            "createTime",
+            "createUser",
+            "updateTime",
+            "updateUser",
         ]
