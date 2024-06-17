@@ -72,7 +72,7 @@ class EmployeeView(APIView):
 
     permission_classes = [permissions.IsAdminUser]
 
-    def post(self, request, *args, **kwargs):
+    def put(self, request, *args, **kwargs):
         self.request = request
         _id = self.request.data.get("id", "")
         id_number = self.request.data.get("idNumber", None)
@@ -119,7 +119,7 @@ class EmployeeView(APIView):
                 }
             )
 
-    def put(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         self.request = request
         _id = self.request.data.get("id", "")
         id_number = self.request.data.get("idNumber", None)
@@ -257,20 +257,22 @@ class EditPasswordView(APIView):
         old_password = request.data.get("oldPassword", None)
         new_password = request.data.get("newPassword", None)
 
-        if not all([employee_id, old_password, new_password]):
+        if not all([old_password, new_password]):
             return Response(
                 {"code": 0, "msg": "Please fill all the fields"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if employee_id:
+            query_users = get_user_model().objects.filter(id=employee_id)
+            if not query_users.exists():
+                return Response(
+                    {"code": 0, "msg": "Employee do Not exist."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        query_users = get_user_model().objects.filter(id=employee_id)
-        if not query_users.exists():
-            return Response(
-                {"code": 0, "msg": "Employee do Not exist."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        user = query_users[0]
+            user = query_users[0]
+        else:
+            user = request.user
         if not user.check_password(old_password):
             return Response(
                 {"code": 0, "msg": "Old password is incorrect."},

@@ -10,7 +10,7 @@ class Employee(AbstractUser):
         max_length=11, verbose_name="Phone Number", null=True, blank=True
     )
     sex = models.CharField(
-        max_length=1, choices=(("M", "male"), ("F", "female")), null=True, blank=True
+        max_length=1, choices=(("1", "male"), ("0", "female")), null=True, blank=True
     )
     id_number = models.CharField(
         max_length=18, verbose_name="ID Number", null=True, blank=True

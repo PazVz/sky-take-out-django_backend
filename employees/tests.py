@@ -28,7 +28,7 @@ class CustomLoginViewTests(APITestCase):
             password="testpass123",
             name="test_login",
             phone="12345678901",
-            sex="F",
+            sex="1",
             id_number="123456789012345678",
             status=1,
         )
@@ -67,7 +67,7 @@ class CustomLogoutViewTests(APITestCase):
             password="testpass123",
             name="test_logout",
             phone="12345678901",
-            sex="F",
+            sex="1",
             id_number="123456789012345678",
             status=1,
         )
@@ -97,7 +97,7 @@ class EmployeeViewTests(APITestCase):
             password="testpass123",
             name="admin_user",
             phone="12345678901",
-            sex="F",
+            sex="1",
             id_number="123456789012345678",
             status=1,
         )
@@ -107,7 +107,7 @@ class EmployeeViewTests(APITestCase):
             "password": "testpass123",
             "name": "employee_testuser",
             "phone": "12345678901",
-            "sex": "F",
+            "sex": "1",
             "idNumber": "123456789012345678",
             "status": 1,
         }
@@ -116,14 +116,14 @@ class EmployeeViewTests(APITestCase):
         self.url = reverse("add_or_edit_employee")
         self.view = EmployeeView.as_view()
 
-    def test_create_employee_with_put_and_edit_it_wiht_post(self):
-        # 测试通过 PUT 添加用户
-        request_put = self.factory.put(self.url, data=self.testuser_data, format="json")
-        force_authenticate(request_put, user=self.admin_user)
-        response_put = self.view(request_put)
-        self.assertEqual(response_put.status_code, status.HTTP_200_OK)
-        response_put_json = str(response_put.data)
-        self.assertIn("employee_testuser", response_put_json)
+    def test_create_employee_with_post_and_edit_it_wiht_put(self):
+        # 测试通过 POST 添加用户
+        request_post = self.factory.post(self.url, data=self.testuser_data, format="json")
+        force_authenticate(request_post, user=self.admin_user)
+        response_post = self.view(request_post)
+        self.assertEqual(response_post.status_code, status.HTTP_200_OK)
+        response_post_json = str(response_post.data)
+        self.assertIn("employee_testuser", response_post_json)
 
         # 获取刚刚添加的用户的 ID
         latest_user = get_user_model().objects.latest("id")
@@ -133,14 +133,14 @@ class EmployeeViewTests(APITestCase):
         edit_testuser_data = dict(self.testuser_data)
         edit_testuser_data["username"] = "employee_testuser(edit)"
         edit_testuser_data["id"] = _id
-        request_post = self.factory.post(
+        request_put = self.factory.put(
             self.url, data=edit_testuser_data, format="json"
         )
-        force_authenticate(request_post, user=self.admin_user)
-        response_post = self.view(request_post)
-        self.assertEqual(response_post.status_code, status.HTTP_200_OK)
-        response_post_json = str(response_post.data)
-        self.assertIn("employee_testuser(edit)", response_post_json)
+        force_authenticate(request_put, user=self.admin_user)
+        response_put = self.view(request_put)
+        self.assertEqual(response_put.status_code, status.HTTP_200_OK)
+        response_put_json = str(response_put.data)
+        self.assertIn("employee_testuser(edit)", response_put_json)
 
 
 class QueryEmployeeViewTest(APITestCase):
@@ -151,7 +151,7 @@ class QueryEmployeeViewTest(APITestCase):
             password="testpass123",
             name="test_query",
             phone="12345678901",
-            sex="F",
+            sex="1",
             id_number="123456789012345678",
             status=1,
         )
@@ -179,7 +179,7 @@ class ChangeEmployeeStatusViewTest(APITestCase):
             password="testpass123",
             name="admin_user",
             phone="12345678901",
-            sex="F",
+            sex="1",
             id_number="123456789012345678",
             status=1,
         )
@@ -188,7 +188,7 @@ class ChangeEmployeeStatusViewTest(APITestCase):
             password="testpass123",
             name="test_change_status_1",
             phone="12345678901",
-            sex="F",
+            sex="1",
             id_number="123456789012345678",
             status=1,
         )
@@ -197,7 +197,7 @@ class ChangeEmployeeStatusViewTest(APITestCase):
             password="testpass123",
             name="test_change_status_0",
             phone="12345678901",
-            sex="F",
+            sex="1",
             id_number="123456789012345678",
             status=0,
         )
@@ -265,7 +265,7 @@ class EditPasswordViewTests(APITestCase):
             password="testpass123",
             name="test_edit_password",
             phone="12345678901",
-            sex="F",
+            sex="1",
             id_number="123456789012345678",
             status=1,
         )
@@ -309,7 +309,7 @@ class PaginationEmployeeViewTests(APITestCase):
             password="testpass123",
             name="admin_user",
             phone="12345678901",
-            sex="F",
+            sex="1",
             id_number="123456789012345678",
             status=1,
         )
@@ -320,7 +320,7 @@ class PaginationEmployeeViewTests(APITestCase):
                 password="testpass123",
                 name=f"test_Pagination_{i}",
                 phone="12345678901",
-                sex="F",
+                sex="1",
                 id_number="123456789012345678",
                 status=1,
             )
