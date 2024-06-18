@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "dj_rest_auth",
     # local_apps
     "employees.apps.EmployeesConfig",
+    "file_upload.apps.FileUploadConfig",
 ]
 
 MIDDLEWARE = [
@@ -175,3 +176,7 @@ LOGGING = {
         },
     },
 }
+
+MEDIA_URL = "/media/"
+
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
