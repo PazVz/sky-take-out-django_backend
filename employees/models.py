@@ -22,9 +22,9 @@ class Employee(AbstractUser):
         null=True,
         blank=True,
     )
-    createTime = models.DateTimeField(auto_now_add=True, verbose_name="Create Time")
-    updateTime = models.DateTimeField(auto_now=True, verbose_name="Last Update Time")
-    createUser = models.ForeignKey(
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name="Create Time")
+    update_time = models.DateTimeField(auto_now=True, verbose_name="Last Update Time")
+    create_user = models.ForeignKey(
         "self",
         null=True,
         blank=True,
@@ -32,7 +32,7 @@ class Employee(AbstractUser):
         related_name="created_employees",
         verbose_name="Creator",
     )
-    updateUser = models.ForeignKey(
+    update_user = models.ForeignKey(
         "self",
         null=True,
         blank=True,

@@ -14,6 +14,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from utils import get_custom_pagination
+
 from .serializers import CustomLoginResponseSerializer, EmployeeSerializer
 
 logger = logging.getLogger(__name__)
@@ -73,13 +75,12 @@ class EmployeeView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def put(self, request, *args, **kwargs):
-        self.request = request
-        _id = self.request.data.get("id", "")
-        id_number = self.request.data.get("idNumber", None)
-        name = self.request.data.get("name", None)
-        phone = self.request.data.get("phone", None)
-        sex = self.request.data.get("sex", None)
-        username = self.request.data.get("username", None)
+        _id = request.data.get("id", "")
+        id_number = request.data.get("idNumber", None)
+        name = request.data.get("name", None)
+        phone = request.data.get("phone", None)
+        sex = request.data.get("sex", None)
+        username = request.data.get("username", None)
 
         if not all([_id, id_number, name, phone, sex, username]):
             return Response(
@@ -101,7 +102,7 @@ class EmployeeView(APIView):
             edit_employee.phone = phone
             edit_employee.sex = sex
             edit_employee.username = username
-            edit_employee.update_user = self.request.user
+            edit_employee.update_user = request.user
             edit_employee.save()
         except Exception as e:
             return Response(
@@ -120,13 +121,12 @@ class EmployeeView(APIView):
             )
 
     def post(self, request, *args, **kwargs):
-        self.request = request
-        _id = self.request.data.get("id", "")
-        id_number = self.request.data.get("idNumber", None)
-        name = self.request.data.get("name", None)
-        phone = self.request.data.get("phone", None)
-        sex = self.request.data.get("sex", None)
-        username = self.request.data.get("username", None)
+        _id = request.data.get("id", "")
+        id_number = request.data.get("idNumber", None)
+        name = request.data.get("name", None)
+        phone = request.data.get("phone", None)
+        sex = request.data.get("sex", None)
+        username = request.data.get("username", None)
 
         if not all([id_number, name, phone, sex, username]):
             return Response(
@@ -149,8 +149,8 @@ class EmployeeView(APIView):
                     phone=phone,
                     sex=sex,
                     username=username,
-                    createUser=self.request.user,
-                    updateUser=self.request.user,
+                    create_user=request.user,
+                    update_user=request.user,
                 )
             else:
                 created_employee = get_user_model().objects.create(
@@ -159,8 +159,8 @@ class EmployeeView(APIView):
                     phone=phone,
                     sex=sex,
                     username=username,
-                    createUser=self.request.user,
-                    updateUser=self.request.user,
+                    create_user=request.user,
+                    update_user=request.user,
                 )
         except Exception as e:
             return Response(
@@ -179,7 +179,7 @@ class EmployeeView(APIView):
             )
 
 
-class QueryEmployeeView(APIView):
+class QueryEmployeeByIDView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -216,7 +216,7 @@ class ChangeEmployeeStatusView(APIView):
 
         if employee_status not in (0, 1):
             return Response(
-                {"code": 0, "msg": "Status code NOT correct."},
+                {"code": 0, "msg": "Status code is NOT correct."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -240,7 +240,7 @@ class ChangeEmployeeStatusView(APIView):
                 msg = f"Employee (id = {employee_id}) account was LOCKED."
 
         user.status = employee_status
-        user.updateUser = request.user
+        user.update_user = request.user
         user.save()
 
         return Response(
@@ -295,18 +295,6 @@ class EditPasswordView(APIView):
 class PaginationEmployeeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_custom_pagination(self, page_size):
-        class CustomPagination(PageNumberPagination):
-
-            def __init__(self, page_size) -> None:
-                self.page_size = page_size
-                super().__init__()
-
-            page_size_query_param = "pageSize"
-            max_page_size = 100
-
-        return CustomPagination(page_size)
-
     def get(self, request, *args, **kwargs):
         name = request.query_params.get("name", None)
         page_size = request.query_params.get("pageSize", None)
@@ -317,20 +305,20 @@ class PaginationEmployeeView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        paginator = self.get_custom_pagination(page_size)
+        paginator = get_custom_pagination(page_size)
         queryset = get_user_model().objects.all()
         if name:
             queryset = queryset.filter(name__contains=name)
 
         result_page = paginator.paginate_queryset(queryset, request)
-        if result_page is not None:
-            serializer = EmployeeSerializer(result_page, many=True)
-            response_data = {
+        return Response(
+            {
                 "code": 1,
                 "msg": "Successfully fetched employees",
                 "data": {
                     "total": queryset.count(),
-                    "records": serializer.data,
+                    "records": EmployeeSerializer(result_page, many=True).data,
                 },
-            }
-            return Response(response_data)
+            },
+            status=status.HTTP_200_OK,
+        )

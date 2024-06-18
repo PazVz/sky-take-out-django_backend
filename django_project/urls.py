@@ -25,6 +25,7 @@ urlpatterns = [
     path("dj-rest-auth/", include("dj_rest_auth.urls")),
     path("admin/", include("employees.urls")),
     path("admin/", include("file_upload.urls")),
+    path("admin/", include("meals.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     # local_apps
     "employees.apps.EmployeesConfig",
     "file_upload.apps.FileUploadConfig",
+    "meals.apps.MealsConfig",
 ]
 
 MIDDLEWARE = [
@@ -180,3 +181,7 @@ LOGGING = {
 MEDIA_URL = "/media/"
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+
+PAGE_SIZE_QUERY_PARAM = "pageSize"
+MAX_PAGE_SIZE = 100

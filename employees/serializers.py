@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from utils import to_camel_case
 
 
 class CustomLoginResponseSerializer(serializers.Serializer):
@@ -17,6 +18,7 @@ class CustomLoginResponseSerializer(serializers.Serializer):
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = get_user_model()
         fields = [
@@ -28,8 +30,12 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "sex",
             "id_number",
             "status",
-            "createTime",
-            "createUser",
-            "updateTime",
-            "updateUser",
+            "create_time",
+            "update_time",
+            "create_user",
+            "update_user",
         ]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        return {to_camel_case(key): value for key, value in representation.items()}

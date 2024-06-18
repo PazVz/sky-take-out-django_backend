@@ -9,12 +9,12 @@ from rest_framework.test import (
 )
 
 from .views import (
-    CustomLogoutView,
-    EmployeeView,
-    QueryEmployeeView,
     ChangeEmployeeStatusView,
+    CustomLogoutView,
     EditPasswordView,
+    EmployeeView,
     PaginationEmployeeView,
+    QueryEmployeeByIDView,
 )
 
 # Create your tests here.
@@ -156,7 +156,7 @@ class QueryEmployeeViewTest(APITestCase):
             status=1,
         )
         self.factory = APIRequestFactory()
-        self.view = QueryEmployeeView.as_view()
+        self.view = QueryEmployeeByIDView.as_view()
         self.url = reverse("query_employee", kwargs={"id": self.user.id})
 
     def test_query_employee(self):

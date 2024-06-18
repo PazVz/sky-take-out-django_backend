@@ -1,20 +1,20 @@
 from django.urls import path
 
 from .views import (
+    ChangeEmployeeStatusView,
     CustomLoginView,
     CustomLogoutView,
-    EmployeeView,
-    QueryEmployeeView,
-    ChangeEmployeeStatusView,
     EditPasswordView,
+    EmployeeView,
     PaginationEmployeeView,
+    QueryEmployeeByIDView,
 )
 
 urlpatterns = [
     path("employee", EmployeeView.as_view(), name="add_or_edit_employee"),
     path("employee/login", CustomLoginView.as_view(), name="employee_login"),
     path("employee/logout", CustomLogoutView.as_view(), name="employee_logout"),
-    path("employee/<int:id>", QueryEmployeeView.as_view(), name="query_employee"),
+    path("employee/<int:id>", QueryEmployeeByIDView.as_view(), name="query_employee"),
     path(
         "employee/status/<int:status>",
         ChangeEmployeeStatusView.as_view(),
