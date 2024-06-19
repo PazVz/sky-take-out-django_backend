@@ -4,12 +4,16 @@ from .views import (
     CategoryView,
     ChangeCategoryStatusView,
     ChangeDishStatusView,
+    ChangeSetmealStatusView,
     DishView,
     PaginationCategoryView,
     PaginationDishView,
+    PaginationSetmealView,
     QueryCategoryByTypeView,
     QueryDishByCategoryView,
     QueryDishByIdView,
+    QuerySetmealByIdView,
+    SetMealView,
 )
 
 urlpatterns = [
@@ -33,5 +37,15 @@ urlpatterns = [
         "dish/status/<int:status>",
         ChangeDishStatusView.as_view(),
         name="change_dish_status",
+    ),
+    path("setmeal", SetMealView.as_view(), name="add_or_edit_or_delete_setmeal"),
+    path(
+        "setmeal/<int:id>", QuerySetmealByIdView.as_view(), name="query_setmeal_by_id"
+    ),
+    path("setmeal/page", PaginationSetmealView.as_view(), name="pagination_setmeal"),
+    path(
+        "setmeal/status/<int:status>",
+        ChangeSetmealStatusView.as_view(),
+        name="change_setmeal_status",
     ),
 ]

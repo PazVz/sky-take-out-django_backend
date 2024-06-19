@@ -7,8 +7,12 @@ from rest_framework.views import APIView
 from file_upload.models import UploadedImage
 from utils import from_image_url_to_image_relative_path, get_custom_pagination
 
-from .models import Category, Dish, DishFlavor
-from .serializers import CategorySerializer, DishSerializer
+from .models import Category, Dish, DishFlavor, Setmeal, SetmealDish
+from .serializers import (
+    CategorySerializer,
+    DishSerializer,
+    SetmealSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -410,10 +414,9 @@ class DishView(APIView):
             dish.name = name
             dish.price = price
             dish.update_user = request.user
-            dish.save()
             if _status:
                 dish.status = _status
-                dish.save()
+            dish.save()
             DishFlavor.objects.filter(dish_id=dish).delete()
             for flavor in flavors:
                 DishFlavor.objects.create(
@@ -421,6 +424,13 @@ class DishView(APIView):
                     name=flavor["name"],
                     value=flavor["value"],
                 )
+
+            setmeal_dishes = SetmealDish.objects.filter(dish_id=dish)
+            for setmeal_dish in setmeal_dishes:
+                setmeal_dish.price = dish.price
+                setmeal_dish.name = dish.name
+                setmeal_dish.save()
+
         except Exception as e:
             return Response(
                 {"code": 0, "msg": f"Failed to update dish: {e}"},
@@ -537,15 +547,14 @@ class ChangeDishStatusView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        query_dish = Dish.objects.filter(id=dish_id)
+        dish = Dish.objects.get(id=dish_id)
 
-        if not query_dish.exists():
+        if not dish:
             return Response(
                 {"code": 0, "msg": "Dish do Not exist"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        dish = query_dish[0]
         msg = ""
         match (dish.status, dish_status):
             case (0, 0):
@@ -601,4 +610,325 @@ class PaginationDishView(APIView):
                     "records": DishSerializer(result_page, many=True).data,
                 },
             }
+        )
+
+
+class SetMealView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        category_id = request.data.get("categoryId", None)
+        description = request.data.get("description", "")
+        image_url = request.data.get("image", None)
+        name = request.data.get("name", None)
+        price = request.data.get("price", None)
+        _status = request.data.get("status", None)
+        setmeal_dishes = request.data.get("setmealDishes", [])
+
+        if not all([category_id, image_url, name, price, setmeal_dishes]):
+            return Response(
+                {
+                    "code": 0,
+                    "msg": "Please fill all the required fields: categoryId, name, price, image, setmealDishes",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        for setmeal_dish in setmeal_dishes:
+            if not all(
+                [
+                    setmeal_dish.get("dishId"),
+                    setmeal_dish.get("copies"),
+                    setmeal_dish.get("name"),
+                    setmeal_dish.get("price"),
+                ]
+            ):
+                return Response(
+                    {
+                        "code": 0,
+                        "msg": "Please fill all the required fields for setmealDishes: dishId, copies",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        category = Category.objects.filter(id=category_id).first()
+        if not category:
+            return Response(
+                {"code": 0, "msg": "Category does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        image_obj = UploadedImage.objects.filter(
+            file=from_image_url_to_image_relative_path(image_url)
+        ).first()
+        if not image_obj:
+            return Response(
+                {"code": 0, "msg": "Image does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            created_setmeal = Setmeal.objects.create(
+                category_id=category,
+                description=description,
+                image=image_obj,
+                name=name,
+                price=price,
+                create_user=request.user,
+                update_user=request.user,
+            )
+            if _status:
+                created_setmeal.status = _status
+                created_setmeal.save()
+            for setmeal_dish in setmeal_dishes:
+                SetmealDish.objects.create(
+                    setmeal_id=created_setmeal,
+                    dish_id=Dish.objects.get(id=setmeal_dish["dishId"]),
+                    copies=setmeal_dish["copies"],
+                    name=setmeal_dish["name"],
+                    price=setmeal_dish["price"],
+                )
+        except Exception as e:
+            return Response(
+                {"code": 0, "msg": f"Failed to create setmeal: {e}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            return Response(
+                {
+                    "code": 1,
+                    "data": SetmealSerializer(created_setmeal).data,
+                    "msg": "Setmeal created successfully",
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+    def put(self, request, *args, **kwargs):
+        category_id = request.data.get("categoryId", None)
+        description = request.data.get("description", "")
+        _id = request.data.get("id", None)
+        image_url = request.data.get("image", None)
+        name = request.data.get("name", None)
+        price = request.data.get("price", None)
+        _status = request.data.get("status", None)
+        setmeal_dishes = request.data.get("setmealDishes", [])
+
+        if not all([category_id, _id, image_url, name, price, setmeal_dishes]):
+            return Response(
+                {
+                    "code": 0,
+                    "msg": "Please fill all the required fields: categoryId, id, name, price, image, setmealDishes",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        for setmeal_dish in setmeal_dishes:
+            if not all(
+                [
+                    setmeal_dish.get("dishId"),
+                    setmeal_dish.get("copies"),
+                    setmeal_dish.get("name"),
+                    setmeal_dish.get("price"),
+                ]
+            ):
+                return Response(
+                    {
+                        "code": 0,
+                        "msg": "Please fill all the required fields for setmealDishes: dishId, copies",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        category = Category.objects.filter(id=category_id).first()
+        if not category:
+            return Response(
+                {"code": 0, "msg": "Category does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        image_obj = UploadedImage.objects.filter(
+            file=from_image_url_to_image_relative_path(image_url)
+        ).first()
+        if not image_obj:
+            return Response(
+                {"code": 0, "msg": "Image does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            setmeal = Setmeal.objects.get(id=_id)
+            setmeal.category_id = category
+            setmeal.description = description
+            setmeal.image = image_obj
+            setmeal.name = name
+            setmeal.price = price
+            setmeal.update_user = request.user
+            if _status:
+                setmeal.status = _status
+            setmeal.save()
+            SetmealDish.objects.filter(setmeal_id=setmeal).delete
+            for setmeal_dish in setmeal_dishes:
+                SetmealDish.objects.create(
+                    dish_id=setmeal_dish["dishId"],
+                    copies=setmeal_dish["copies"],
+                    name=setmeal_dish["name"],
+                    price=setmeal_dish["price"],
+                )
+        except Exception as e:
+            return Response(
+                {"code": 0, "msg": f"Failed to update setmeal: {e}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            return Response(
+                {
+                    "code": 1,
+                    "msg": "Setmeal updated successfully",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+    def delete(self, request, *args, **kwargs):
+        _ids = request.query_params.get("ids", None)
+        ids_list = _ids.split(",") if _ids else []
+        if not ids_list:
+            return Response(
+                {"code": 0, "msg": "Please provide the ids"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        setmeals = Setmeal.objects.filter(id__in=ids_list)
+        if setmeals.count() != len(ids_list):
+            return Response(
+                {"code": 0, "msg": "Some of the setmeal ids do not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            setmeals.delete()
+        except Exception as e:
+            return Response(
+                {"code": 0, "msg": f"Failed to delete setmeals: {e}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            return Response(
+                {
+                    "code": 1,
+                    "msg": "Setmeals deleted successfully",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+
+class QuerySetmealByIdView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        _id = self.kwargs.get("id", None)
+
+        if not _id:
+            return Response(
+                {"code": 0, "msg": "Please provide the id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        setmeal = Setmeal.objects.filter(id=_id).first()
+        if not setmeal:
+            return Response(
+                {"code": 0, "msg": "Setmeal id does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "code": 1,
+                "data": SetmealSerializer(setmeal).data,
+                "msg": "Get dish data successfully.",
+            },
+        )
+
+
+class PaginationSetmealView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        name = request.query_params.get("name", None)
+        page_size = request.query_params.get("pageSize", None)
+        category_id = request.query_params.get("categoryId", None)
+        _status = request.query_params.get("status", None)
+
+        if not page_size:
+            return Response(
+                {"code": 0, "data": {}, "msg": "Please fill all the fields"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        paginator = get_custom_pagination(page_size)
+        queryset = Setmeal.objects.all()
+        if name:
+            queryset = queryset.filter(name__contains=name)
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        if _status:
+            queryset = queryset.filter(status=_status)
+
+        result_page = paginator.paginate_queryset(queryset, request)
+        return Response(
+            {
+                "code": 1,
+                "msg": "Successfully fetched dish",
+                "data": {
+                    "total": queryset.count(),
+                    "records": SetmealSerializer(result_page, many=True).data,
+                },
+            }
+        )
+
+
+class ChangeSetmealStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        setmeal_id = request.GET.get("id", None)
+        setmeal_status = self.kwargs.get("status", -1)
+
+        if not setmeal_id:
+            return Response(
+                {"code": 0, "msg": "Missing setmeal id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if setmeal_status not in (0, 1):
+            return Response(
+                {"code": 0, "msg": "Status code is NOT correct."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        setmeal = Setmeal.objects.get(id=setmeal_id)
+
+        if not setmeal:
+            return Response(
+                {"code": 0, "msg": "Dish do Not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        msg = ""
+        match (setmeal.status, setmeal_status):
+            case (0, 0):
+                msg = f"Dish (id = {setmeal_id}) was already BANNED."
+            case (1, 1):
+                msg = f"Dish (id = {setmeal_id}) was already ACTIVATED."
+            case (0, 1):
+                msg = f"Dish (id = {setmeal_id}) was was ACTIVATED."
+            case (1, 0):
+                msg = f"Dish (id = {setmeal_id}) was was LOCKED."
+
+        setmeal.status = setmeal_status
+        setmeal.update_user = request.user
+        setmeal.save()
+
+        return Response(
+            {"code": 1, "data": DishSerializer(setmeal).data, "msg": msg},
+            status=status.HTTP_200_OK,
         )

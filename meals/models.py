@@ -150,6 +150,8 @@ class SetmealDish(models.Model):
     setmeal_id = models.ForeignKey(Setmeal, on_delete=models.CASCADE)
     dish_id = models.ForeignKey(Dish, on_delete=models.CASCADE)
     copies = models.IntegerField()
+    name = models.CharField(max_length=32, verbose_name="dish name", default="")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="price", default=0.0)
 
     def __str__(self) -> str:
-        return f"{self.setmeal}:{self.dish}({self.copies})"
+        return f"{self.setmeal_id}: {self.dish_id} ({self.copies}份)"
