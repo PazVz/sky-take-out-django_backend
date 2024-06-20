@@ -4,7 +4,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.file_upload.models import UploadedImage
+from applications.file_upload.models import UploadedImage
 from utils import from_image_url_to_image_relative_path, get_custom_pagination
 
 from .models import Category, Dish, DishFlavor, Setmeal, SetmealDish

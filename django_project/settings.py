@@ -53,9 +53,10 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "dj_rest_auth",
     # local_apps
-    "apps.employees.apps.EmployeesConfig",
-    "apps.file_upload.apps.FileUploadConfig",
-    "apps.meals.apps.MealsConfig",
+    "applications.employees.apps.EmployeesConfig",
+    "applications.file_upload.apps.FileUploadConfig",
+    "applications.meals.apps.MealsConfig",
+    "applications.shop.apps.ShopConfig",
 ]
 
 MIDDLEWARE = [
@@ -102,6 +103,17 @@ DATABASES = {
         "PORT": env("MYSQL_PORT"),
     }
 }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"redis://{env("REDIS_HOST")}:6379",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

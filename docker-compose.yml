@@ -10,6 +10,7 @@ services:
       - .:/code
     depends_on:
       - db
+      - redis
     environment:
       - DJANGO_DEBUG=${DJANGO_DEBUG}
       - SECRET_KEY=${SECRET_KEY}
