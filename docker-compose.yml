@@ -11,17 +11,27 @@ services:
     depends_on:
       - db
     environment:
-      - "DJANGO_DEBUG=True"
+      - DJANGO_DEBUG=${DJANGO_DEBUG}
+      - SECRET_KEY=${SECRET_KEY}
+      - MYSQL_ENGINE=${MYSQL_ENGINE}
+      - MYSQL_NAME=${MYSQL_NAME}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
     
   db:
     image: mysql:latest
     volumes:
       - mysql_db_data:/var/lib/mysql
     environment:
-      - "MYSQL_ROOT_PASSWORD=123456"
-      - "MYSQL_DATABASE=sky-take-out-django_backend"
-      - "MYSQL_USER=pazv"
-      - "MYSQL_PASSWORD=123456"
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_NAME}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+  redis:
+    image: redis:latest
 
 volumes:
   mysql_db_data:
