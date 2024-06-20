@@ -53,9 +53,9 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "dj_rest_auth",
     # local_apps
-    "employees.apps.EmployeesConfig",
-    "file_upload.apps.FileUploadConfig",
-    "meals.apps.MealsConfig",
+    "apps.employees.apps.EmployeesConfig",
+    "apps.file_upload.apps.FileUploadConfig",
+    "apps.meals.apps.MealsConfig",
 ]
 
 MIDDLEWARE = [

@@ -23,9 +23,9 @@ from django.urls import include, path
 urlpatterns = [
     path("django_admin/", admin.site.urls),
     path("dj-rest-auth/", include("dj_rest_auth.urls")),
-    path("admin/", include("employees.urls")),
-    path("admin/", include("file_upload.urls")),
-    path("admin/", include("meals.urls")),
+    path("admin/", include("apps.employees.urls")),
+    path("admin/", include("apps.file_upload.urls")),
+    path("admin/", include("apps.meals.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from file_upload.models import UploadedImage
+from apps.file_upload.models import UploadedImage
 
 # Create your models here.
 
