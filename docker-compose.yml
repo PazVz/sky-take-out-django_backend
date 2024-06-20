@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    ports: 
+      - "8000:8000"
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    depends_on:
+      - db
+    environment:
+      - "DJANGO_DEBUG=True"
+    
+  db:
+    image: mysql:latest
+    volumes:
+      - mysql_db_data:/var/lib/mysql
+    environment:
+      - "MYSQL_ROOT_PASSWORD=123456"
+      - "MYSQL_DATABASE=sky-take-out-django_backend"
+      - "MYSQL_USER=pazv"
+      - "MYSQL_PASSWORD=123456"
+
+volumes:
+  mysql_db_data:
