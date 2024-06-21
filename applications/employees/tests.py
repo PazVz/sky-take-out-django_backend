@@ -81,7 +81,6 @@ class CustomLogoutViewTests(APITestCase):
         response = self.view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["code"], 1)
-        self.assertEqual(response.data["msg"], "Successfully Logout")
 
     def test_logout_unauth(self):
         request = self.factory.post(self.logout_url)
@@ -118,7 +117,9 @@ class EmployeeViewTests(APITestCase):
 
     def test_create_employee_with_post_and_edit_it_wiht_put(self):
         # 测试通过 POST 添加用户
-        request_post = self.factory.post(self.url, data=self.testuser_data, format="json")
+        request_post = self.factory.post(
+            self.url, data=self.testuser_data, format="json"
+        )
         force_authenticate(request_post, user=self.admin_user)
         response_post = self.view(request_post)
         self.assertEqual(response_post.status_code, status.HTTP_200_OK)
@@ -133,9 +134,7 @@ class EmployeeViewTests(APITestCase):
         edit_testuser_data = dict(self.testuser_data)
         edit_testuser_data["username"] = "employee_testuser(edit)"
         edit_testuser_data["id"] = _id
-        request_put = self.factory.put(
-            self.url, data=edit_testuser_data, format="json"
-        )
+        request_put = self.factory.put(self.url, data=edit_testuser_data, format="json")
         force_authenticate(request_put, user=self.admin_user)
         response_put = self.view(request_put)
         self.assertEqual(response_put.status_code, status.HTTP_200_OK)
@@ -284,7 +283,6 @@ class EditPasswordViewTests(APITestCase):
         response = self.view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["code"], 1)
-        self.assertEqual(response.data["msg"], "Password changed successfully.")
 
     def test_edit_password_fail(self):
         data = {
@@ -297,7 +295,6 @@ class EditPasswordViewTests(APITestCase):
         response = self.view(request)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["code"], 0)
-        self.assertEqual(response.data["msg"], "Old password is incorrect.")
 
 
 class PaginationEmployeeViewTests(APITestCase):

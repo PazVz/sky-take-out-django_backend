@@ -1,6 +1,8 @@
 from rest_framework import permissions
-from rest_framework.response import Response
-from rest_framework.views import APIView, status
+from rest_framework.views import APIView
+
+from applications.exceptions import KeyMissingException
+from applications.utils import standard_response
 
 from .serializers import UploadedImageSerializer
 
@@ -11,28 +13,13 @@ class ImageUploadView(APIView):
     def post(self, request, *args, **kwargs):
         file = request.data.get("file", None)
         if not file:
-            return Response(
-                {"code": "0", "msg": "No file found in the request"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise KeyMissingException(key_name="file")
 
         image_serializer = UploadedImageSerializer(data=request.data)
-
-        if image_serializer.is_valid():
-            uploaded_image = image_serializer.save()
-            return Response(
-                {
-                    "code": "1",
-                    "data": uploaded_image.get_image_path(),
-                    "msg": "Image uploaded successfully",
-                },
-                status=status.HTTP_201_CREATED,
-            )
-        else:
-            return Response(
-                {
-                    "code": "0",
-                    "msg": f"Image upload failed, error: {image_serializer.errors}",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        image_serializer.is_valid()
+        uploaded_image = image_serializer.save()
+        return standard_response(
+            True,
+            "Image uploaded successfully",
+            uploaded_image.get_image_path(),
+        )

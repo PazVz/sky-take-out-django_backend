@@ -2,7 +2,7 @@ import logging
 
 from rest_framework import serializers
 
-from utils import to_camel_case
+from applications.utils import to_camel_case
 
 from .models import Category, Dish, DishFlavor, Setmeal, SetmealDish
 

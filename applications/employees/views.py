@@ -10,13 +10,23 @@ from dj_rest_auth.views import (
 from django.contrib.auth import get_user_model
 from rest_framework import permissions, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from utils import get_custom_pagination
+from applications.utils import get_custom_pagination, standard_response
 
-from .serializers import CustomLoginResponseSerializer, EmployeeSerializer
+from applications.exceptions import (
+    KeyMissingException,
+    StatusNotRightException,
+    UserNotFoundException,
+)
+from .serializers import (
+    CreateEmployeeSerializer,
+    CustomLoginResponseSerializer,
+    RepresentEmployeeSerializer,
+    UpdateEmployeePasswordSerializer,
+    UpdateEmployeeSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +45,7 @@ class CustomLoginView(DefaultLoginView):
             instance=data,
             context=self.get_serializer_context(),
         )
-        response = Response(serializer.data, status=status.HTTP_200_OK)
+        response = standard_response(True, "Login successful", serializer.data)
         set_jwt_cookies(response, self.access_token, self.refresh_token)
 
         return response
@@ -62,10 +72,7 @@ class CustomLogoutView(DefaultLogoutView):
     permission_classes = [permissions.IsAuthenticated]
 
     def logout(self, request):
-        response = Response(
-            {"code": 1, "msg": "Successfully Logout"},
-            status=status.HTTP_200_OK,
-        )
+        response = standard_response(True, "Logout successful")
         unset_jwt_cookies(response)
         return response
 
@@ -74,109 +81,29 @@ class EmployeeView(APIView):
 
     permission_classes = [permissions.IsAdminUser]
 
-    def put(self, request, *args, **kwargs):
-        _id = request.data.get("id", "")
-        id_number = request.data.get("idNumber", None)
-        name = request.data.get("name", None)
-        phone = request.data.get("phone", None)
-        sex = request.data.get("sex", None)
-        username = request.data.get("username", None)
-
-        if not all([_id, id_number, name, phone, sex, username]):
-            return Response(
-                {"code": 0, "msg": "Please fill all the fields"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if not get_user_model().objects.filter(id=_id).exists():
-            return Response(
-                {"code": 0, "msg": "Username does not exist"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            edit_employee = get_user_model().objects.get(id=_id)
-            edit_employee.id_number = id_number
-            edit_employee.id_number = id_number
-            edit_employee.name = name
-            edit_employee.phone = phone
-            edit_employee.sex = sex
-            edit_employee.username = username
-            edit_employee.update_user = request.user
-            edit_employee.save()
-        except Exception as e:
-            return Response(
-                {"code": 0, "msg": f"Failed to edit employee: {e}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        else:
-            edited_employee = get_user_model().objects.get(id=_id)
-            data = EmployeeSerializer(edited_employee).data
-            return Response(
-                {
-                    "code": 1,
-                    "data": data,
-                    "msg": "Edit employee succussfully",
-                }
-            )
-
     def post(self, request, *args, **kwargs):
-        _id = request.data.get("id", "")
-        id_number = request.data.get("idNumber", None)
-        name = request.data.get("name", None)
-        phone = request.data.get("phone", None)
-        sex = request.data.get("sex", None)
-        username = request.data.get("username", None)
+        serializer = CreateEmployeeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        created_employee = get_user_model().objects.create(
+            **validated_data,
+            create_user=request.user,
+            update_user=request.user,
+        )
+        represent_data = RepresentEmployeeSerializer(created_employee).data
+        return standard_response(True, "Employee created successfully", represent_data)
 
-        if not all([id_number, name, phone, sex, username]):
-            return Response(
-                {"code": 0, "msg": "Please fill all the fields"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if _id and get_user_model().objects.filter(id=_id).exists():
-            return Response(
-                {"code": 0, "msg": "Employee already exists"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            if _id:
-                created_employee = get_user_model().objects.create(
-                    id=_id,
-                    id_number=id_number,
-                    name=name,
-                    phone=phone,
-                    sex=sex,
-                    username=username,
-                    create_user=request.user,
-                    update_user=request.user,
-                )
-            else:
-                created_employee = get_user_model().objects.create(
-                    id_number=id_number,
-                    name=name,
-                    phone=phone,
-                    sex=sex,
-                    username=username,
-                    create_user=request.user,
-                    update_user=request.user,
-                )
-        except Exception as e:
-            return Response(
-                {"code": 0, "msg": f"Failed to create employee: {e}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        else:
-            data = EmployeeSerializer(created_employee).data
-            return Response(
-                {
-                    "code": 1,
-                    "data": data,
-                    "msg": "Create employee succussfully",
-                },
-                status=status.HTTP_200_OK,
-            )
+    def put(self, request, *args, **kwargs):
+        serializer = UpdateEmployeeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        updated_employee = get_user_model().objects.get(id=validated_data["id"])
+        for key, value in validated_data.items():
+            setattr(updated_employee, key, value)
+        updated_employee.update_user = request.user
+        updated_employee.save()
+        represent_data = RepresentEmployeeSerializer(updated_employee).data
+        return standard_response(True, "Employee updated successfully", represent_data)
 
 
 class QueryEmployeeByIDView(APIView):
@@ -184,20 +111,14 @@ class QueryEmployeeByIDView(APIView):
 
     def get(self, request, *args, **kwargs):
         employee_id = self.kwargs.get("id", None)
-        queried_employee = get_user_model().objects.filter(id=employee_id)
-        if not queried_employee.exists():
-            return Response(
-                {"code": 0, "msg": "User not Found."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        employee = get_user_model().objects.get(id=employee_id)
+        if not employee:
+            raise UserNotFoundException
 
-        data = EmployeeSerializer(queried_employee[0]).data
-        return Response(
-            {
-                "code": 1,
-                "data": data,
-                "msg": f"Get employee id = {employee_id} Success.",
-            }
+        return standard_response(
+            True,
+            "Employee fetched successfully",
+            RepresentEmployeeSerializer(employee).data,
         )
 
 
@@ -209,25 +130,15 @@ class ChangeEmployeeStatusView(APIView):
         employee_id = request.GET.get("id", None)
 
         if not employee_id:
-            return Response(
-                {"code": 0, "msg": "Missing employee id."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise KeyMissingException(key_name="employeeId")
 
         if employee_status not in (0, 1):
-            return Response(
-                {"code": 0, "msg": "Status code is NOT correct."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise StatusNotRightException
 
-        query_users = get_user_model().objects.filter(id=employee_id)
-        if not query_users.exists():
-            return Response(
-                {"code": 0, "msg": "Employee do Not exist."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        user = get_user_model().objects.get(id=employee_id)
+        if not user:
+            raise UserNotFoundException
 
-        user = query_users[0]
         msg = ""
         match (user.status, employee_status):
             case (0, 0):
@@ -243,53 +154,23 @@ class ChangeEmployeeStatusView(APIView):
         user.update_user = request.user
         user.save()
 
-        return Response(
-            {"code": 1, "data": EmployeeSerializer(user).data, "msg": msg},
-            status=status.HTTP_200_OK,
-        )
+        return standard_response(True, msg)
 
 
 class EditPasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
-        employee_id = request.data.get("empId", None)
-        old_password = request.data.get("oldPassword", None)
-        new_password = request.data.get("newPassword", None)
-
-        if not all([old_password, new_password]):
-            return Response(
-                {"code": 0, "msg": "Please fill all the fields"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if employee_id:
-            query_users = get_user_model().objects.filter(id=employee_id)
-            if not query_users.exists():
-                return Response(
-                    {"code": 0, "msg": "Employee do Not exist."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            user = query_users[0]
-        else:
-            user = request.user
-        if not user.check_password(old_password):
-            return Response(
-                {"code": 0, "msg": "Old password is incorrect."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        user.set_password(new_password)
+        serializer = UpdateEmployeePasswordSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        user = request.user
+        user.set_password(validated_data["new_password"])
         user.save()
 
-        return Response(
-            {
-                "code": 1,
-                "data": EmployeeSerializer(user).data,
-                "msg": "Password changed successfully.",
-            },
-            status=status.HTTP_200_OK,
-        )
+        return standard_response(True, "Password updated successfully")
 
 
 class PaginationEmployeeView(APIView):
@@ -300,10 +181,7 @@ class PaginationEmployeeView(APIView):
         page_size = request.query_params.get("pageSize", None)
 
         if not page_size:
-            return Response(
-                {"code": 0, "data": {}, "msg": "Please fill all the fields"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise KeyMissingException(key_name="pageSize")
 
         paginator = get_custom_pagination(page_size)
         queryset = get_user_model().objects.all()
@@ -311,14 +189,11 @@ class PaginationEmployeeView(APIView):
             queryset = queryset.filter(name__contains=name)
 
         result_page = paginator.paginate_queryset(queryset, request)
-        return Response(
+        return standard_response(
+            True,
+            "Successfully fetched employees",
             {
-                "code": 1,
-                "msg": "Successfully fetched employees",
-                "data": {
-                    "total": queryset.count(),
-                    "records": EmployeeSerializer(result_page, many=True).data,
-                },
+                "total": queryset.count(),
+                "records": RepresentEmployeeSerializer(result_page, many=True).data,
             },
-            status=status.HTTP_200_OK,
         )

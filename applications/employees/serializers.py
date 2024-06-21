@@ -1,6 +1,11 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from utils import to_camel_case
+
+from applications.utils import to_camel_case, to_snake_case
+
+logger = logging.getLogger(__name__)
 
 
 class CustomLoginResponseSerializer(serializers.Serializer):
@@ -12,29 +17,80 @@ class CustomLoginResponseSerializer(serializers.Serializer):
     class Meta:
         fields = ("id", "name", "token", "userName")
 
+
+class RepresentEmployeeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = get_user_model()
+        fields = "__all__"
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
+
     def to_representation(self, instance):
-        response_data = super().to_representation(instance)
-        return {"code": 1, "data": response_data, "msg": "Login successful"}
+        representation = super().to_representation(instance)
+        return {to_camel_case(key): value for key, value in representation.items()}
 
 
-class EmployeeSerializer(serializers.ModelSerializer):
+class CreateEmployeeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
         fields = [
-            "id",
-            "username",
-            "password",
+            "id_number",
             "name",
             "phone",
             "sex",
-            "id_number",
-            "status",
-            "create_time",
-            "update_time",
-            "create_user",
-            "update_user",
+            "username",
         ]
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        return {to_camel_case(key): value for key, value in representation.items()}
+
+
+class UpdateEmployeeSerializer(serializers.Serializer):
+
+    id = serializers.IntegerField()
+    id_number = serializers.CharField(max_length=18)
+    name = serializers.CharField(max_length=32)
+    phone = serializers.CharField(max_length=11)
+    sex = serializers.CharField(max_length=1)
+    username = serializers.CharField()
+
+    def validate_id(self, value):
+        if not get_user_model().objects.filter(id=value).exists():
+            raise serializers.ValidationError("Employee does not exist")
+        return value
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        return {to_camel_case(key): value for key, value in representation.items()}
+
+
+class UpdateEmployeePasswordSerializer(serializers.Serializer):
+
+    old_password = serializers.CharField()
+    new_password = serializers.CharField()
+
+    def validate_old_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is incorrect")
+        return value
+    
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

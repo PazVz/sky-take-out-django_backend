@@ -5,7 +5,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from applications.file_upload.models import UploadedImage
-from utils import from_image_url_to_image_relative_path, get_custom_pagination
+from applications.utils import (
+    from_image_url_to_image_relative_path,
+    get_custom_pagination,
+)
 
 from .models import Category, Dish, DishFlavor, Setmeal, SetmealDish
 from .serializers import (
