@@ -8,24 +8,22 @@ from dj_rest_auth.views import (
     LogoutView as DefaultLogoutView,
 )
 from django.contrib.auth import get_user_model
-from rest_framework import permissions, status
-from rest_framework.exceptions import ValidationError
-from rest_framework.response import Response
+from rest_framework import permissions
 from rest_framework.views import APIView
-
-from applications.utils import get_custom_pagination, standard_response
 
 from applications.exceptions import (
     KeyMissingException,
     StatusNotRightException,
     UserNotFoundException,
 )
+from applications.utils import get_custom_pagination, standard_response
+
 from .serializers import (
-    CreateEmployeeSerializer,
     CustomLoginResponseSerializer,
-    RepresentEmployeeSerializer,
-    UpdateEmployeePasswordSerializer,
-    UpdateEmployeeSerializer,
+    EmployeeCreationSerializer,
+    EmployeePasswordChangeSerializer,
+    EmployeeRepresentationSerializer,
+    EmployeeUpdateSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -53,19 +51,9 @@ class CustomLoginView(DefaultLoginView):
     def post(self, request, *args, **kwargs):
         self.request = request
         self.serializer = self.get_serializer(data=self.request.data)
-        try:
-            self.serializer.is_valid(raise_exception=True)
-        except ValidationError:
-            return Response(
-                {
-                    "code": 0,
-                    "msg": "Login failed",
-                },
-                status=status.HTTP_200_OK,
-            )
-        else:
-            self.login()
-            return self.get_response()
+        self.serializer.is_valid(raise_exception=True)
+        self.login()
+        return self.get_response()
 
 
 class CustomLogoutView(DefaultLogoutView):
@@ -82,7 +70,7 @@ class EmployeeView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def post(self, request, *args, **kwargs):
-        serializer = CreateEmployeeSerializer(data=request.data)
+        serializer = EmployeeCreationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         created_employee = get_user_model().objects.create(
@@ -90,11 +78,11 @@ class EmployeeView(APIView):
             create_user=request.user,
             update_user=request.user,
         )
-        represent_data = RepresentEmployeeSerializer(created_employee).data
+        represent_data = EmployeeRepresentationSerializer(created_employee).data
         return standard_response(True, "Employee created successfully", represent_data)
 
     def put(self, request, *args, **kwargs):
-        serializer = UpdateEmployeeSerializer(data=request.data)
+        serializer = EmployeeUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         updated_employee = get_user_model().objects.get(id=validated_data["id"])
@@ -102,7 +90,7 @@ class EmployeeView(APIView):
             setattr(updated_employee, key, value)
         updated_employee.update_user = request.user
         updated_employee.save()
-        represent_data = RepresentEmployeeSerializer(updated_employee).data
+        represent_data = EmployeeRepresentationSerializer(updated_employee).data
         return standard_response(True, "Employee updated successfully", represent_data)
 
 
@@ -118,7 +106,7 @@ class QueryEmployeeByIDView(APIView):
         return standard_response(
             True,
             "Employee fetched successfully",
-            RepresentEmployeeSerializer(employee).data,
+            EmployeeRepresentationSerializer(employee).data,
         )
 
 
@@ -130,7 +118,7 @@ class ChangeEmployeeStatusView(APIView):
         employee_id = request.GET.get("id", None)
 
         if not employee_id:
-            raise KeyMissingException(key_name="employeeId")
+            raise KeyMissingException(key_name="employeeId", position="query params")
 
         if employee_status not in (0, 1):
             raise StatusNotRightException
@@ -161,7 +149,7 @@ class EditPasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
-        serializer = UpdateEmployeePasswordSerializer(
+        serializer = EmployeePasswordChangeSerializer(
             data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
@@ -181,7 +169,7 @@ class PaginationEmployeeView(APIView):
         page_size = request.query_params.get("pageSize", None)
 
         if not page_size:
-            raise KeyMissingException(key_name="pageSize")
+            raise KeyMissingException(key_name="pageSize", position="request data")
 
         paginator = get_custom_pagination(page_size)
         queryset = get_user_model().objects.all()
@@ -194,6 +182,8 @@ class PaginationEmployeeView(APIView):
             "Successfully fetched employees",
             {
                 "total": queryset.count(),
-                "records": RepresentEmployeeSerializer(result_page, many=True).data,
+                "records": EmployeeRepresentationSerializer(
+                    result_page, many=True
+                ).data,
             },
         )

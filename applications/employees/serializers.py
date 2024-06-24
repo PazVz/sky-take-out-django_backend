@@ -18,22 +18,18 @@ class CustomLoginResponseSerializer(serializers.Serializer):
         fields = ("id", "name", "token", "userName")
 
 
-class RepresentEmployeeSerializer(serializers.ModelSerializer):
+class EmployeeRepresentationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
         fields = "__all__"
-
-    def to_internal_value(self, data):
-        data = {to_snake_case(key): value for key, value in data.items()}
-        return super().to_internal_value(data)
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         return {to_camel_case(key): value for key, value in representation.items()}
 
 
-class CreateEmployeeSerializer(serializers.ModelSerializer):
+class EmployeeCreationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
@@ -49,12 +45,8 @@ class CreateEmployeeSerializer(serializers.ModelSerializer):
         data = {to_snake_case(key): value for key, value in data.items()}
         return super().to_internal_value(data)
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        return {to_camel_case(key): value for key, value in representation.items()}
 
-
-class UpdateEmployeeSerializer(serializers.Serializer):
+class EmployeeUpdateSerializer(serializers.Serializer):
 
     id = serializers.IntegerField()
     id_number = serializers.CharField(max_length=18)
@@ -72,12 +64,9 @@ class UpdateEmployeeSerializer(serializers.Serializer):
         data = {to_snake_case(key): value for key, value in data.items()}
         return super().to_internal_value(data)
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        return {to_camel_case(key): value for key, value in representation.items()}
 
 
-class UpdateEmployeePasswordSerializer(serializers.Serializer):
+class EmployeePasswordChangeSerializer(serializers.Serializer):
 
     old_password = serializers.CharField()
     new_password = serializers.CharField()
@@ -91,7 +80,3 @@ class UpdateEmployeePasswordSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         data = {to_snake_case(key): value for key, value in data.items()}
         return super().to_internal_value(data)
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        return {to_camel_case(key): value for key, value in representation.items()}

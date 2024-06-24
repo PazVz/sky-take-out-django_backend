@@ -2,14 +2,19 @@ import logging
 
 from rest_framework import serializers
 
-from applications.utils import to_camel_case
+from applications.file_upload.models import UploadedImage
+from applications.utils import (
+    from_image_url_to_image_relative_path,
+    to_camel_case,
+    to_snake_case,
+)
 
 from .models import Category, Dish, DishFlavor, Setmeal, SetmealDish
 
 logger = logging.getLogger(__name__)
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class CategoryRepresentationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
@@ -20,18 +25,55 @@ class CategorySerializer(serializers.ModelSerializer):
         return {to_camel_case(key): value for key, value in representation.items()}
 
 
-class DishFlavorSerializer(serializers.ModelSerializer):
+class CategoryCreationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        fields = ["name", "sort", "type"]
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
+
+
+class CategoryUpdateSerializer(serializers.Serializer):
+
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    sort = serializers.IntegerField()
+    # type = serializers.CharField()
+
+    def validate_id(self, value):
+        if not Category.objects.get(id=value):
+            raise serializers.ValidationError("Category does not exist")
+        return value
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
+
+
+class DishFlavorRepresentationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DishFlavor
-        fields = "__all__"
+        fields = ["name", "value"]
 
 
-class DishSerializer(serializers.ModelSerializer):
+class DishFlavorAcceptationSerializer(serializers.ModelSerializer):
 
-    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    class Meta:
+        model = DishFlavor
+        fields = ["name", "value"]
+
+
+class DishRepresentationSerializer(serializers.ModelSerializer):
+
     category_name = serializers.SerializerMethodField()
-    flavors = DishFlavorSerializer(many=True, read_only=True, source="dishflavor_set")
+    image = serializers.SerializerMethodField()
+    flavors = DishFlavorRepresentationSerializer(
+        many=True, read_only=True, source="dishflavor_set"
+    )
 
     class Meta:
         model = Dish
@@ -48,48 +90,123 @@ class DishSerializer(serializers.ModelSerializer):
             "update_time",
         ]
 
-    def get_image_url(self, obj):
+    def get_image(self, obj):
+        logger.debug(f" 123 123 123 {obj.image.file.url}")
         return obj.image.file.url
 
     def get_category_name(self, obj):
         return obj.category_id.name
 
-    def get_float_price(self, obj):
-        return float(obj.price) if obj.price else None
-
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["image"] = self.get_image_url(instance)
-        representation["category_name"] = self.get_category_name(instance)
-        representation["price"] = self.get_float_price(instance)
+        representation["price"] = float(instance.price) if instance.price else None
         representation = {
             to_camel_case(key): value for key, value in representation.items()
         }
         return representation
 
 
-class SetmealDishSerializer(serializers.ModelSerializer):
+class DishCreationSerializer(serializers.ModelSerializer):
+
+    category_id = serializers.IntegerField()
+    description = serializers.CharField(required=False, allow_blank=True)
+    flavors = DishFlavorAcceptationSerializer(many=True, required=False)
+    image = serializers.CharField()
+    status = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = Dish
+        fields = [
+            "category_id",
+            "description",
+            "flavors",
+            "name",
+            "price",
+            "image",
+            "status",
+        ]
+
+    def validate_image(self, value):
+        if not UploadedImage.objects.get(
+            file=from_image_url_to_image_relative_path(value)
+        ):
+            raise serializers.ValidationError("Can't find the image uploaded")
+        return value
+
+    def validate_category_id(self, value):
+        if not Category.objects.get(id=value):
+            raise serializers.ValidationError("Category does not exist")
+        return value
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
+
+
+class DishUpdateSerializer(serializers.Serializer):
+    category_id = serializers.IntegerField()
+    description = serializers.CharField(required=False, allow_blank=True)
+    flavors = DishFlavorAcceptationSerializer(many=True, required=False)
+    id = serializers.IntegerField()
+    image = serializers.CharField()
+    name = serializers.CharField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    status = serializers.IntegerField(required=False)
+
+    def validate_id(self, value):
+        if not Dish.objects.get(id=value):
+            raise serializers.ValidationError("Dish does not exist")
+        return value
+
+    def validate_image(self, value):
+        if not UploadedImage.objects.get(
+            file=from_image_url_to_image_relative_path(value)
+        ):
+            raise serializers.ValidationError("Can't find the image uploaded")
+        return value
+
+    def validate_category_id(self, value):
+        if not Category.objects.get(id=value):
+            raise serializers.ValidationError("Category does not exist")
+        return value
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
+
+
+class SetmealDishRepresentationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SetmealDish
         fields = ["id", "dish_id", "setmeal_id", "price", "name", "copies"]
 
-    def get_float_price(self, obj):
-        return float(obj.price) if obj.price else None
-
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["price"] = self.get_float_price(instance)
+        representation["price"] = float(instance.price) if instance.price else None
         representation = {
             to_camel_case(key): value for key, value in representation.items()
         }
         return representation
 
 
-class SetmealSerializer(serializers.ModelSerializer):
-    category_name = serializers.SerializerMethodField()
+class SetmealDishAcceptationSerializer(serializers.Serializer):
+    dish_id = serializers.IntegerField()
     price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    setmeal_dishes = SetmealDishSerializer(many=True, read_only=True)
+    name = serializers.CharField()
+    copies = serializers.IntegerField()
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
+
+
+class SetmealRepresentationSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    category_name = serializers.SerializerMethodField()
+    setmeal_dishes = SetmealDishRepresentationSerializer(
+        many=True, read_only=True, source="setmealdish_set"
+    )
 
     class Meta:
         model = Setmeal
@@ -106,24 +223,78 @@ class SetmealSerializer(serializers.ModelSerializer):
             "setmeal_dishes",
         ]
 
-    def get_image_url(self, obj):
+    def get_image(self, obj):
         return obj.image.file.url
 
     def get_category_name(self, obj):
-        return obj.category_id.name
+        return obj.category_id.name if obj.category_id else None
 
-    def get_float_price(self, obj):
-        return float(obj.price) if obj.price else None
+    def get_setmeal_dishes(self, obj):
+        setmeal_dishes = SetmealDish.objects.filter(setmeal_id=obj)
+        return SetmealDishRepresentationSerializer(setmeal_dishes, many=True).data
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["image"] = self.get_image_url(instance)
-        representation["category_name"] = self.get_category_name(instance)
-        representation["price"] = self.get_float_price(instance)
-        representation["setmeal_dishes"] = SetmealDishSerializer(
-            SetmealDish.objects.filter(setmeal_id=instance), many=True
-        ).data
+        representation["price"] = float(instance.price) if instance.price else None
         representation = {
             to_camel_case(key): value for key, value in representation.items()
         }
         return representation
+
+
+class SetmealCreationSerializer(serializers.Serializer):
+    category_id = serializers.IntegerField()
+    description = serializers.CharField(required=False, allow_blank=True)
+    image = serializers.CharField()
+    name = serializers.CharField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    status = serializers.IntegerField(required=False)
+    setmeal_dishes = SetmealDishAcceptationSerializer(many=True)
+
+    def validate_image(self, value):
+        if not UploadedImage.objects.get(
+            file=from_image_url_to_image_relative_path(value)
+        ):
+            raise serializers.ValidationError("Can't find the image uploaded")
+        return value
+
+    def validate_category_id(self, value):
+        if not Category.objects.get(id=value):
+            raise serializers.ValidationError("Category does not exist")
+        return value
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)
+
+
+class SetmealUpdateSerializer(serializers.Serializer):
+    category_id = serializers.IntegerField()
+    description = serializers.CharField(required=False, allow_blank=True)
+    id = serializers.IntegerField()
+    image = serializers.CharField()
+    name = serializers.CharField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    status = serializers.IntegerField(required=False)
+    setmeal_dishes = SetmealDishAcceptationSerializer(many=True)
+
+    def validate_id(self, value):
+        if not Setmeal.objects.get(id=value):
+            raise serializers.ValidationError("Setmeal does not exist")
+        return value
+
+    def validate_image(self, value):
+        if not UploadedImage.objects.get(
+            file=from_image_url_to_image_relative_path(value)
+        ):
+            raise serializers.ValidationError("Can't find the image uploaded")
+        return value
+
+    def validate_category_id(self, value):
+        if not Category.objects.get(id=value):
+            raise serializers.ValidationError("Category does not exist")
+        return value
+
+    def to_internal_value(self, data):
+        data = {to_snake_case(key): value for key, value in data.items()}
+        return super().to_internal_value(data)

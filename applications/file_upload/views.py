@@ -13,7 +13,7 @@ class ImageUploadView(APIView):
     def post(self, request, *args, **kwargs):
         file = request.data.get("file", None)
         if not file:
-            raise KeyMissingException(key_name="file")
+            raise KeyMissingException(key_name="file", position="request data")
 
         image_serializer = UploadedImageSerializer(data=request.data)
         image_serializer.is_valid()
