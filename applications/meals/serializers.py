@@ -41,12 +41,6 @@ class CategoryUpdateSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     sort = serializers.IntegerField()
-    # type = serializers.CharField()
-
-    def validate_id(self, value):
-        if not Category.objects.get(id=value):
-            raise serializers.ValidationError("Category does not exist")
-        return value
 
     def to_internal_value(self, data):
         data = {to_snake_case(key): value for key, value in data.items()}
@@ -91,7 +85,6 @@ class DishRepresentationSerializer(serializers.ModelSerializer):
         ]
 
     def get_image(self, obj):
-        logger.debug(f" 123 123 123 {obj.image.file.url}")
         return obj.image.file.url
 
     def get_category_name(self, obj):
@@ -126,18 +119,6 @@ class DishCreationSerializer(serializers.ModelSerializer):
             "status",
         ]
 
-    def validate_image(self, value):
-        if not UploadedImage.objects.get(
-            file=from_image_url_to_image_relative_path(value)
-        ):
-            raise serializers.ValidationError("Can't find the image uploaded")
-        return value
-
-    def validate_category_id(self, value):
-        if not Category.objects.get(id=value):
-            raise serializers.ValidationError("Category does not exist")
-        return value
-
     def to_internal_value(self, data):
         data = {to_snake_case(key): value for key, value in data.items()}
         return super().to_internal_value(data)
@@ -154,20 +135,8 @@ class DishUpdateSerializer(serializers.Serializer):
     status = serializers.IntegerField(required=False)
 
     def validate_id(self, value):
-        if not Dish.objects.get(id=value):
+        if not Dish.objects.filter(id=value).exists():
             raise serializers.ValidationError("Dish does not exist")
-        return value
-
-    def validate_image(self, value):
-        if not UploadedImage.objects.get(
-            file=from_image_url_to_image_relative_path(value)
-        ):
-            raise serializers.ValidationError("Can't find the image uploaded")
-        return value
-
-    def validate_category_id(self, value):
-        if not Category.objects.get(id=value):
-            raise serializers.ValidationError("Category does not exist")
         return value
 
     def to_internal_value(self, data):
@@ -251,18 +220,6 @@ class SetmealCreationSerializer(serializers.Serializer):
     status = serializers.IntegerField(required=False)
     setmeal_dishes = SetmealDishAcceptationSerializer(many=True)
 
-    def validate_image(self, value):
-        if not UploadedImage.objects.get(
-            file=from_image_url_to_image_relative_path(value)
-        ):
-            raise serializers.ValidationError("Can't find the image uploaded")
-        return value
-
-    def validate_category_id(self, value):
-        if not Category.objects.get(id=value):
-            raise serializers.ValidationError("Category does not exist")
-        return value
-
     def to_internal_value(self, data):
         data = {to_snake_case(key): value for key, value in data.items()}
         return super().to_internal_value(data)
@@ -279,20 +236,8 @@ class SetmealUpdateSerializer(serializers.Serializer):
     setmeal_dishes = SetmealDishAcceptationSerializer(many=True)
 
     def validate_id(self, value):
-        if not Setmeal.objects.get(id=value):
+        if not Setmeal.objects.filter(id=value).exists():
             raise serializers.ValidationError("Setmeal does not exist")
-        return value
-
-    def validate_image(self, value):
-        if not UploadedImage.objects.get(
-            file=from_image_url_to_image_relative_path(value)
-        ):
-            raise serializers.ValidationError("Can't find the image uploaded")
-        return value
-
-    def validate_category_id(self, value):
-        if not Category.objects.get(id=value):
-            raise serializers.ValidationError("Category does not exist")
         return value
 
     def to_internal_value(self, data):

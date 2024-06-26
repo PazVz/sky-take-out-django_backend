@@ -14,7 +14,6 @@ from rest_framework.views import APIView
 from applications.exceptions import (
     KeyMissingException,
     StatusNotRightException,
-    UserNotFoundException,
 )
 from applications.utils import get_custom_pagination, standard_response
 
@@ -100,8 +99,6 @@ class QueryEmployeeByIDView(APIView):
     def get(self, request, *args, **kwargs):
         employee_id = self.kwargs.get("id", None)
         employee = get_user_model().objects.get(id=employee_id)
-        if not employee:
-            raise UserNotFoundException
 
         return standard_response(
             True,
@@ -124,8 +121,6 @@ class ChangeEmployeeStatusView(APIView):
             raise StatusNotRightException
 
         user = get_user_model().objects.get(id=employee_id)
-        if not user:
-            raise UserNotFoundException
 
         msg = ""
         match (user.status, employee_status):
