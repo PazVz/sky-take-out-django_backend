@@ -28,6 +28,8 @@ urlpatterns = [
     path("admin/", include("applications.meals.urls")),
     path("admin/", include("applications.shop.urls")),
     path("user/", include("applications.shop.urls")),
+    path("user/", include("applications.meals.urls")),
+    path("user/", include("applications.customers.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

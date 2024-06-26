@@ -8,22 +8,6 @@ class UserNotFoundException(APIException):
     default_code = "user_not_found"
 
 
-class CategoryNotFoundException(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "Category not found."
-    default_code = "category_not_found"
-
-
-class DishNotFoundException(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "Dish not found"
-    default_code = "dish_not_found"
-
-class SetmealNotFoundException(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "Setmeal not found"
-    default_code = "setmeal_not_found"
-
 class StatusNotRightException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Status code is NOT correct."

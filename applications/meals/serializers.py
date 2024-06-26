@@ -2,9 +2,7 @@ import logging
 
 from rest_framework import serializers
 
-from applications.file_upload.models import UploadedImage
 from applications.utils import (
-    from_image_url_to_image_relative_path,
     to_camel_case,
     to_snake_case,
 )

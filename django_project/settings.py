@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -36,7 +37,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DJANGO_DEBUG")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["webservers", "127.0.0.1"]
 
 
 # Application definition
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # 3rd
     "rest_framework",
+    'rest_framework_simplejwt',
     "rest_framework.authtoken",
     "dj_rest_auth",
     # local_apps
@@ -57,6 +59,7 @@ INSTALLED_APPS = [
     "applications.file_upload.apps.FileUploadConfig",
     "applications.meals.apps.MealsConfig",
     "applications.shop.apps.ShopConfig",
+    "applications.customers.apps.CustomersConfig",
 ]
 
 MIDDLEWARE = [
@@ -165,6 +168,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+        "applications.customers.authentication.CustomJWTAuthentication"
     ],
     # 'EXCEPTION_HANDLER': 'applications.exception_handler.custom_exception_handler',
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
@@ -206,3 +210,34 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 PAGE_SIZE_QUERY_PARAM = "pageSize"
 MAX_PAGE_SIZE = 100
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
+
+
+WECHAT_APPID = env("WECHAT_APPID")
+WECHAT_SECRET_KEY = env("WECHAT_SECRET_KEY")

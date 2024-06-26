@@ -4,10 +4,7 @@ from rest_framework import permissions
 from rest_framework.views import APIView
 
 from applications.exceptions import (
-    CategoryNotFoundException,
-    DishNotFoundException,
     KeyMissingException,
-    SetmealNotFoundException,
     StatusNotRightException,
 )
 from applications.file_upload.models import UploadedImage
@@ -65,8 +62,6 @@ class CategoryView(APIView):
             raise KeyMissingException(key_name="id", position="query params")
 
         category = Category.objects.get(id=_id)
-        if not category:
-            raise CategoryNotFoundException
         category.delete()
         return standard_response(True, "Category deleted successfully", {})
 
@@ -102,8 +97,6 @@ class ChangeCategoryStatusView(APIView):
             raise StatusNotRightException
 
         category = Category.objects.get(id=category_id)
-        if not category:
-            raise CategoryNotFoundException
 
         msg = ""
         match (category.status, category_status):
@@ -217,10 +210,6 @@ class DishView(APIView):
         ids_list = _ids.split(",") if _ids else []
         if not ids_list:
             raise KeyMissingException(key_name="ids", position="query params")
-
-        for _id in _ids:
-            if not Dish.objects.get(id=_id):
-                raise DishNotFoundException
         dishes = Dish.objects.filter(id__in=ids_list)
         dishes.delete()
         return standard_response(True, "Dish deleted successfully")
@@ -232,8 +221,6 @@ class QueryDishByIdView(APIView):
     def get(self, request, *args, **kwargs):
         _id = self.kwargs.get("id", None)
         dish = Dish.objects.get(id=_id)
-        if not dish:
-            raise DishNotFoundException
         return standard_response(
             True, "Get dish data successfully", DishRepresentationSerializer(dish).data
         )
@@ -269,9 +256,6 @@ class ChangeDishStatusView(APIView):
             raise StatusNotRightException
 
         dish = Dish.objects.get(id=dish_id)
-
-        if not dish:
-            raise DishNotFoundException
 
         msg = ""
         match (dish.status, dish_status):
@@ -387,9 +371,6 @@ class SetMealView(APIView):
         if not ids_list:
             raise KeyMissingException(key_name="ids", position="query params")
 
-        for _id in _ids:
-            if not Setmeal.objects.get(id=_id):
-                raise SetmealNotFoundException
         setmeals = Setmeal.objects.filter(id__in=ids_list)
         setmeals.delete()
         return standard_response(True, "Setmeal deleted successfully", {})
@@ -405,13 +386,27 @@ class QuerySetmealByIdView(APIView):
             raise KeyMissingException(key_name="id", position="query params")
 
         setmeal = Setmeal.objects.get(id=_id)
-        if not setmeal:
-            raise SetmealNotFoundException
 
         return standard_response(
             True,
             "Get setmeal data successfully",
             SetmealRepresentationSerializer(setmeal).data,
+        )
+
+
+class QuerySetmealByCategoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        category_id = request.query_params.get("categoryId", None)
+
+        if not category_id:
+            raise KeyMissingException(key_name="categoryId", position="query params")
+        setmeals = Setmeal.objects.filter(category_id=category_id)
+        return standard_response(
+            True,
+            "Get dish data successfully",
+            SetmealRepresentationSerializer(setmeals, many=True).data,
         )
 
 
@@ -461,9 +456,6 @@ class ChangeSetmealStatusView(APIView):
             raise StatusNotRightException
 
         setmeal = Setmeal.objects.get(id=setmeal_id)
-
-        if not setmeal:
-            raise SetmealNotFoundException
 
         msg = ""
         match (setmeal.status, setmeal_status):
