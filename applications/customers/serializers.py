@@ -2,9 +2,9 @@ import requests
 from django.conf import settings
 from rest_framework import serializers
 
-from applications.utils import standard_response, to_camel_case, to_snake_case
+from applications.utils import to_camel_case, to_snake_case
 
-from .models import WechatCostomer, AddressBook
+from .models import Address, WechatCostomer
 
 
 class AuthorizationWechatCostomerLoginSerializer(serializers.Serializer):
@@ -31,7 +31,7 @@ class AuthorizationWechatCostomerLoginSerializer(serializers.Serializer):
 
 class AddressBookRepresentationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AddressBook
+        model = Address
         fields = "__all__"
 
     def to_representation(self, instance):
@@ -81,3 +81,4 @@ class AddressBookUpdateSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         data = {to_snake_case(key): value for key, value in data.items()}
         return super().to_internal_value(data)
+

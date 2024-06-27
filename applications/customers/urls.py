@@ -1,10 +1,15 @@
 from django.urls import path, re_path
 
 from .views import (
-    AddressBookView,
+    AddressView,
     AuthorizationWechatCostomerLoginView,
-    QueryAddressBookByID,
-    QueryAllAddressBookView,
+    DefaultAddressView,
+    QueryAddressByIDView,
+    QueryAllAddressView,
+    ShoppingCartAddView,
+    ShoppingCartAllView,
+    ShoppingCartCleanView,
+    ShoppingCartRemoveView,
 )
 
 urlpatterns = [
@@ -15,13 +20,36 @@ urlpatterns = [
     ),
     re_path(
         r"^addressBook/?$",
-        AddressBookView.as_view(),
-        name="add_or_edit_or_delete_address_book",
+        AddressView.as_view(),
+        name="add_or_edit_or_delete_address",
     ),
-    path("addressBook/list", QueryAllAddressBookView.as_view(), name="address_book"),
+    path("addressBook/list", QueryAllAddressView.as_view(), name="query_address_by_id"),
     path(
         "addressBook/<int:id>",
-        QueryAddressBookByID.as_view(),
-        name="query_address_book_by_id",
+        QueryAddressByIDView.as_view(),
+        name="query_address_by_id",
+    ),
+    path(
+        "addressBook/default",
+        DefaultAddressView.as_view(),
+        name="query_dafault_address",
+    ),
+    path(
+        "shoppingCart/list",
+        ShoppingCartAllView.as_view(),
+        name="query_shopping_cart_data",
+    ),
+    path(
+        "shoppingCart/add",
+        ShoppingCartAddView.as_view(),
+        name="add_to_shopping_cart",
+    ),
+    path(
+        "shoppingCart/clean",
+        ShoppingCartCleanView.as_view(),
+        name="clean_shopping_cart",
+    ),
+    path(
+        "shoppingCart/sub", ShoppingCartRemoveView.as_view(), name="remove_shopping_cart"
     ),
 ]

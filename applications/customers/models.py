@@ -19,7 +19,7 @@ class WechatCostomer(models.Model):
         return True
 
 
-class AddressBook(models.Model):
+class Address(models.Model):
     customer_id = models.ForeignKey(WechatCostomer, on_delete=models.CASCADE)
     consignee = models.CharField(max_length=50)
     sex = models.CharField(
