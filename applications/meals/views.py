@@ -381,10 +381,6 @@ class QuerySetmealByIdView(APIView):
 
     def get(self, request, *args, **kwargs):
         _id = self.kwargs.get("id", None)
-
-        if not _id:
-            raise KeyMissingException(key_name="id", position="query params")
-
         setmeal = Setmeal.objects.get(id=_id)
 
         return standard_response(

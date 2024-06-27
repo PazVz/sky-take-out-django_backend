@@ -37,4 +37,4 @@ class Address(models.Model):
     is_default = models.BooleanField(default=False)
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.province_name}{self.city_name}{self.district_name}{self.detail}"

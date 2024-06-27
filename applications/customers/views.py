@@ -151,7 +151,7 @@ class ShoppingCartAllView(APIView):
         res = []
         for key, value in cart_data.items():
             shopping_cart_item = {}
-            shopping_cart_item["number"] = value["count"]
+            shopping_cart_item["number"] = value["number"]
             shopping_cart_item["createTime"] = value["timestamp"]
             match key.split("_"):
                 case ["dish", dish_id, dish_flavor]:
@@ -161,7 +161,7 @@ class ShoppingCartAllView(APIView):
                     shopping_cart_item["image"] = dish_obj.image.file.url
                     shopping_cart_item["name"] = dish_obj.name
                     shopping_cart_item["amount"] = dish_obj.price
-                case ["dish", dish_id, dish_flavor]:
+                case ["dish", dish_id]:
                     shopping_cart_item["dishId"] = dish_id
                     dish_obj = Dish.objects.get(id=dish_id)
                     shopping_cart_item["image"] = dish_obj.image.file.url
@@ -203,10 +203,10 @@ class ShoppingCartAddView(APIView):
                 )
 
         if item_name in cart_data:
-            cart_data[item_name]["count"] += 1
+            cart_data[item_name]["number"] += 1
         else:
             cart_data[item_name] = {
-                "count": 1,
+                "number": 1,
             }
 
         cart_data[item_name]["timestamp"] = datetime.now().isoformat()
@@ -236,13 +236,13 @@ class ShoppingCartRemoveView(APIView):
                     key_name="dishId or setmealId", position="request body"
                 )
 
-        if item_id not in cart_data or cart_data[item_id]["count"] == 0:
+        if item_id not in cart_data or cart_data[item_id]["number"] == 0:
             raise Exception("Item not in shopping cart")
 
-        if cart_data[item_id]["count"] == 1:
+        if cart_data[item_id]["number"] == 1:
             del cart_data[item_id]
         else:
-            cart_data[item_id]["count"] -= 1
+            cart_data[item_id]["number"] -= 1
             cart_data[item_id]["timestamp"] = datetime.now().isoformat()
 
         cache.set(cache_key, cart_data, timeout=86400)

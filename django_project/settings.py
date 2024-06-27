@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "applications.meals.apps.MealsConfig",
     "applications.shop.apps.ShopConfig",
     "applications.customers.apps.CustomersConfig",
+    "applications.orders.apps.OrdersConfig",
 ]
 
 MIDDLEWARE = [
