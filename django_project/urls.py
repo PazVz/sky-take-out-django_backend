@@ -27,6 +27,7 @@ urlpatterns = [
     path("admin/", include("applications.file_upload.urls")),
     path("admin/", include("applications.meals.urls")),
     path("admin/", include("applications.shop.urls")),
+    path("admin/", include("applications.orders.urls")),
     path("user/", include("applications.shop.urls")),
     path("user/", include("applications.meals.urls")),
     path("user/", include("applications.customers.urls")),

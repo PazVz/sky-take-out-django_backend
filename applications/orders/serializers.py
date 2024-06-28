@@ -12,6 +12,14 @@ class OrderDetailRepresentationSerializer(serializers.ModelSerializer):
         model = OrderDetail
         fields = "__all__"
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["amount"] = float(representation["amount"])
+        representation = {
+            to_camel_case(key): value for key, value in representation.items()
+        }
+        return representation
+
 
 class OrderRrepresentationSerializer(serializers.ModelSerializer):
 
@@ -25,6 +33,30 @@ class OrderRrepresentationSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        representation["amount"] = float(representation["amount"])
+        representation["pack_amount"] = float(representation["pack_amount"])
+        representation = {
+            to_camel_case(key): value for key, value in representation.items()
+        }
+        return representation
+
+
+class OrderRrepresentationSerializer2(serializers.ModelSerializer):
+
+    order_dishes = order_dishes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = "__all__"
+
+    def get_order_dishes(self, obj):
+        order_details = obj.orderdetail_set.all()
+        return ", ".join([f"{detail.name}*{detail.number}" for detail in order_details])
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["amount"] = float(representation["amount"])
+        representation["pack_amount"] = float(representation["pack_amount"])
         representation = {
             to_camel_case(key): value for key, value in representation.items()
         }
@@ -45,3 +77,4 @@ class OrderCreationSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         data = {to_snake_case(key): value for key, value in data.items()}
         return super().to_internal_value(data)
+
