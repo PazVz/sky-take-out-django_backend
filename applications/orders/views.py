@@ -1,10 +1,11 @@
 import logging
 import time
 from datetime import datetime
-
+from django.conf import settings
 from django.core.cache import cache
 from rest_framework import permissions
 from rest_framework.views import APIView
+from rocketmq.client import Message, Producer
 
 from applications.exceptions import KeyMissingException
 from applications.meals.models import Dish, Setmeal
@@ -62,6 +63,16 @@ class OrderCreateView(APIView):
                         number=value["number"],
                         amount=setmeal.price,
                     )
+
+        # producer = Producer('PID_order')
+        # producer.set_name_server_address(settings.ROCKETMQ_NAME_SERVER)
+        # producer.start()
+        # msg = Message('OrderCancel')
+        # msg.set_keys(order_number)
+        # msg.set_body(str(created_order.id))
+        # msg.set_delay_time_level(14)
+        # producer.send_sync(msg)
+        # producer.shutdown()
 
         return standard_response(
             True,

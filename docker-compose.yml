@@ -14,7 +14,6 @@ services:
     environment:
       - DJANGO_DEBUG=${DJANGO_DEBUG}
       - SECRET_KEY=${SECRET_KEY}
-      - MYSQL_ENGINE=${MYSQL_ENGINE}
       - MYSQL_NAME=${MYSQL_NAME}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
@@ -33,6 +32,23 @@ services:
 
   redis:
     image: redis:latest
+
+  rocketmq-namesrv:
+    image: apache/rocketmq:latest
+    container_name: rocketmq-namesrv
+    command: sh mqnamesrv
+
+  rocketmq-broker:
+    image: apache/rocketmq:latest
+    container_name: rocketmq-broker
+    depends_on:
+      - rocketmq-namesrv
+    # volumes:
+    #   - ./rocketmq-broker.conf:/etc/rocketmq/broker.conf
+    command: sh mqbroker -n rocketmq-namesrv:9876 
+    environment:
+      - JAVA_OPT_EXT=-server -Xms512M -Xmx512M -Xmn256M
+      - NAMESRV_ADDR=rocketmq-namesrv:9876
 
 volumes:
   mysql_db_data:
